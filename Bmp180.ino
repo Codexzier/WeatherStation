@@ -25,9 +25,9 @@ void ReadBmp180Sensor(bool printOn) {
   float temperature = bmp085GetTemperature(rawValueUt);     // calculate to final temperature value
   uint16_t rawValueUp = bmp085ReadUP();                     // get the raw pressure value
   mPressure = bmp085GetPressure(rawValueUp);                // calculate to final pressure value
-  mAtmosphere = mPressure / 101325;                          // calculate "standard atmosphere"
+  mAtmosphere = mPressure / 101325;                         // calculate "standard atmosphere"
                                                             // 101325 Pa is an base value of atmosphere
-  mAltitude = calcAltitude(mPressure);                       // calculate altitude in meters
+  mAltitude = calcAltitude(mPressure);                      // calculate altitude in meters
   mTemperatures[0] = temperature;                           // set temperature result to global variable
 
   if(printOn) {
