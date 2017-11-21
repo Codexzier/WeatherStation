@@ -14,7 +14,7 @@ long b5;
 // The results used to calculation 
 // ========================================================================================
 // printOn = True to take on of detail output information.
-void ReadBmp180Sensor(bool printOn) {
+void Bmp180ReadSensor(bool printOn) {
 
   if(printOn) {
     Serial.println("Read BMP180 sensor:");
@@ -41,7 +41,9 @@ void ReadBmp180Sensor(bool printOn) {
 
 // ========================================================================================
 // read all needed calibration values
-void bmp085Calibration() {
+void Bmp180Calibration() {
+
+  Serial.println("Calibrate BMP180");
   ac1 = bmp085ReadInt(0xAA); 
   ac2 = bmp085ReadInt(0xAC);
   ac3 = bmp085ReadInt(0xAE); 

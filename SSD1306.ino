@@ -19,13 +19,27 @@ void OledSetup() {
 // columnValue  = set the werite position
 // text         = write a text, but only place for two chars
 // value        = write the value to right side
-void OledPrintTitleAndValue(int row, int columnValue, String text, float value) {
+void OledPrintTitleAndValue(int row, String text, float value) {
 
   mOled.setCursor(0, row * 10);                       // set position for text info
   mOled.print(text);                            
 
-  mOled.setCursor(columnValue, row * 10);             // set position for value
+  mOled.setCursor(GetCursorPosition(value), row * 10);             // set position for value
   mOled.print(value, 3);
+}
+
+int GetCursorPosition(float value) {
+  if(value >= 1000) {
+    return 13;
+  }
+  if(value >= 100) {
+    return 19;
+  }
+  if(value >= 10) {
+    return 25;
+  }
+
+  return 31;
 }
 
 // ========================================================================================

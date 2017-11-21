@@ -10,7 +10,7 @@
 // ========================================================================================
 // Open Tasks:    1. Webserver
 //                2. HTML and JavaScript
-//                3. Connect to an central system
+//                3. Connect to a central application or service
 // ========================================================================================
 
 #include <Wire.h>                   
@@ -26,8 +26,8 @@
 const byte OSS = 0;                         // BMP180, Oversampling Setting
 Adafruit_SSD1306 mOled(0);                  // set pins for D1 and D2 for the I²C connection pins
 
-float mOffsetTemperature = 20.4 - 26.1;     // get the temperature result from a reference sensor
-float mOffsetHumidity = 47.0 - 28.0;        // get the humidity result from reference sensor
+float mOffsetTemperature = 23.4 - 25.9;     // set offset the temperature result from a reference sensor
+float mOffsetHumidity = 43.0 - 30.0;        // set offset the humidity result from reference sensor
 
 // ========================================================================================
 // Result variables
@@ -50,11 +50,12 @@ void setup() {
   Serial.begin(115200);
   
   Wire.begin();                             // Start the I²C 
-  Wire.setClock(100000);                    // set the standard clock to 100kHz, 
+  Wire.setClock(400000);                    // set the standard clock is 100kHz, but set fast mode
                                             // not sure it is the real standard value of using 'wire'.
 
-  bmp085Calibration();                      // get the calibration value for the BMP180 results for any calculations.  
-
+  Bmp180Calibration();                      // get the calibration value for the BMP180 results for any calculations.  
+  Htu21PrepareSensor();                     // make a softreset
+  
   OledSetup();                              // base OLED setup. Start, Clear, fontsize and set font type.
 
   SetActualTemperatureToDiagrammArray();    // read temperature and write it to all array index
@@ -63,15 +64,15 @@ void setup() {
 // ========================================================================================
 void loop() {
 
-  ReadBmp180Sensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
-  ReadHtu21Sensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
+  Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
+  Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
 
   RecordTemperatureToArray();               // record temperature for diagram output
   
   mOled.clearDisplay();
-  OledPrintTitleAndValue(0, 25, "T: ", mTemperaturesArray[mIndex] + mOffsetTemperature);
-  OledPrintTitleAndValue(1, 25, "H: ", mHumidity + mOffsetHumidity);
-  OledPrintTitleAndValue(2, 13, "P: ", mPressure / 100.0);
+  OledPrintTitleAndValue(0, "T: ", mTemperaturesArray[mIndex] + mOffsetTemperature);
+  OledPrintTitleAndValue(1, "H: ", mHumidity + mOffsetHumidity);
+  OledPrintTitleAndValue(2, "P: ", mPressure / 100.0);
   
   OledPrintDiagramResults();                // Render the temperature results to a diagram 
   mOled.display();  
@@ -99,8 +100,8 @@ void RecordTemperatureToArray() {
 // it only a optical start optimzing
 void SetActualTemperatureToDiagrammArray() {
   // set first measure to array
-  ReadBmp180Sensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
-  ReadHtu21Sensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
+  Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
+  Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
   
   for(int i = 0; i < 64; i++) {
     mTemperaturesArray[i] = (mTemperatures[0] + mTemperatures[1]) / 2.0;
