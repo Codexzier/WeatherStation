@@ -3,6 +3,16 @@
 // ========================================================================================
 
 // ========================================================================================
+// Settings
+
+int mMeasurementOption = 0;                 // 0 = RH 12bit / 14Bit Temp
+                                            // 1 = RH  8bit / 12Bit Temp
+                                            // 2 = RH 10bit / 13Bit Temp
+                                            // 3 = RH 11bit / 11Bit Temp
+bool mOnChipHeater = false;                 // enable on-chip heater
+bool mOtpReload = false;                    // enable OTP reload, well i inverted this option
+
+// ========================================================================================
 //  prepare sensor to start with default settings.
 void Htu21PrepareSensor() {
   Htu21SoftReset();
@@ -20,49 +30,70 @@ void Htu21SoftReset() {
 // read setting to show to display and write new setting.
 void Htu21Setup() {
   Serial.println("Setup HTU21");
+
+  Serial.println("Read setup: ");
+  Htu21ReadUserRegister();
+  Serial.println();
+
+  Wire.beginTransmission(HTU21D_ADDRESS);
+  Wire.write(0xE6);                         // command for write register command
+  Htu21WriteRegisterSetting(mMeasurementOption, mOnChipHeater, mOtpReload);
+  Wire.endTransmission();
+
+  Serial.println("Read setup after set:");
+  Htu21ReadUserRegister();
+}
+
+void Htu21ReadUserRegister() {
+  
   Htu21WriteCommand(0xE7);                  // command for read user register
 
   Wire.requestFrom(HTU21D_ADDRESS, 1);      // wait for register content
   while(Wire.available() < 1) { }
 
   byte regCon = Wire.read();
-  Serial.print("Register Content: "); 
-  Serial.println(regCon, DEC);              // set decimal to bit and look to datasheet
-
-  Wire.beginTransmission(HTU21D_ADDRESS);
-  Wire.write(0xE6);                         // command for write register command
-  Htu21RegisterSetting(1);                  // max resolution and on-chip heater
-  Wire.endTransmission();
+  Serial.print("\tRegister Result: "); 
+  Serial.println(regCon, BIN);              // set decimal to bit and look to datasheet
 }
 
 // ========================================================================================
-// TODO: is not the right way, to configure the setting, but it quick to do that.
+// set the configuration of htu21d for using other resolution.
 // ========================================================================================
-// option = 0 is default, 1 default with on-chip header
-void Htu21RegisterSetting(int option) {
-
-  switch(option) {
-    case 1: {
-        Wire.write(0x01);                   // register content to write default setup
-                                            // measurement:           RH 12Bit / Temp 14Bit
-                                            // Status End Battery:    VDD > 2.25V
-                                            // Enable on-chip heater: OFF
-                                            // Disable OTP reload:    ON
-      break;
-    }
-    case 2: {
-        Wire.write(0x03);                   // register content to write default setup
-                                            // measurement:           RH 12Bit / Temp 14Bit
-                                            // Status End Battery:    VDD > 2.25V
-                                            // Enable on-chip heater: ON
-                                            // Disable OTP reload:    ON
-      break;
-    }
-  }
+// measurement  = 0 = RH 12bit / 14Bit Temp
+//                1 = RH  8bit / 12Bit Temp
+//                2 = RH 10bit / 13Bit Temp
+//                3 = RH 11bit / 11Bit Temp
+// enableHeader = enable the on-chip header
+// otpReload    = if set '0', the default setting loads after each time measurements
+//                found not how many times going to set default.
+void Htu21WriteRegisterSetting(int measurement, bool enableHeader, bool otpReload) {
   
+  byte command = 0x00;
 
+  if(measurement > 0) {
+    command |= (byte)(measurement << 6);      // set the bits for the measurement resultion
+  }
+
+  Serial.print("\tMeasurement resolution: ");
+  switch(measurement) {
+    case(1): { Serial.println("\tRH  8bit / 12Bit Temp"); break; }
+    case(2): { Serial.println("\tRH 10bit / 13Bit Temp"); break; }
+    case(3): { Serial.println("\tRH 11bit / 11Bit Temp"); break; }
+    default: { Serial.println("\tRH 12bit / 14Bit Temp"); break; }
+  }
+
+  if(enableHeader) {
+    command |= 0x02;                          // set the bit for enable
+  }
+  Serial.print("\tOn-Chip header: \t\t"); Serial.println(enableHeader, BIN);
+
+  if(!otpReload) {                            // Invert enter, well from datasheet is disable if on
+    command |= 0x01;                          // set the bit for disable
+  }
+  Serial.print("\tOTP Reload: \t\t\t"); Serial.println(enableHeader, BIN);
+
+  Wire.write(command);                        // write the finish command
 }
-
 
 // ========================================================================================
 // Read the measure of humidity and temperature. 

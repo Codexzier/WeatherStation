@@ -26,8 +26,8 @@
 const byte OSS = 0;                         // BMP180, Oversampling Setting
 Adafruit_SSD1306 mOled(0);                  // set pins for D1 and D2 for the I²C connection pins
 
-float mOffsetTemperature = 23.4 - 25.9;     // set offset the temperature result from a reference sensor
-float mOffsetHumidity = 43.0 - 30.0;        // set offset the humidity result from reference sensor
+float mOffsetTemperature = 22.4 - 25.9;     // set offset the temperature result from a reference sensor
+float mOffsetHumidity = 41.0 - 30.0;        // set offset the humidity result from reference sensor
 
 // ========================================================================================
 // Result variables
@@ -48,6 +48,8 @@ float mTemperaturesArray[64];               // an array of 64 result
 // ========================================================================================
 void setup() {
   Serial.begin(115200);
+  Serial.println();                         // only one row. 
+                                            // sometime the controller shows other unencoded chars
   
   Wire.begin();                             // Start the I²C 
   Wire.setClock(400000);                    // set the standard clock is 100kHz, but set fast mode
@@ -85,13 +87,9 @@ void loop() {
 // set the actual average measurement of temperatures.
 void RecordTemperatureToArray() {
   
-  if(mIndex < 63) {
-    mIndex++;
-  }
-  else {
-    mIndex = 0;
-  }
-
+  if(mIndex < 63) { mIndex++; }
+  else { mIndex = 0; }
+  
   mTemperaturesArray[mIndex] = (mTemperatures[0] + mTemperatures[1]) / 2.0;
 }
 
