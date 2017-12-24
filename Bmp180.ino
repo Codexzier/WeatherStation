@@ -59,6 +59,8 @@ void Bmp180Calibration() {
 
 // ========================================================================================
 // Calculate temperature in deg C
+// ========================================================================================
+// ut = uncompensated temperature value
 float bmp085GetTemperature(uint16_t ut){
   long x1 = (((long)ut - (long)ac6)*(long)ac5) >> 15;
   long x2 = ((long)mc << 11)/(x1 + md);
@@ -69,6 +71,8 @@ float bmp085GetTemperature(uint16_t ut){
 
 // ========================================================================================
 // calculate pressure from raw value
+// ========================================================================================
+// up = uncompensated pressure value
 long bmp085GetPressure(unsigned long up){
 
   long b6 = b5 - 4000;
@@ -102,6 +106,8 @@ long bmp085GetPressure(unsigned long up){
 
 // ========================================================================================
 // Read 1 byte from the BMP085 at 'address'
+// ========================================================================================
+// address = target register
 char bmp085Read(byte address)
 {
   Wire.beginTransmission(BMP085_ADDRESS);
@@ -114,6 +120,8 @@ char bmp085Read(byte address)
 
 // ========================================================================================
 // read two byte 
+// ========================================================================================
+// address = target register
 int16_t bmp085ReadInt(byte address)
 {
   Wire.beginTransmission(BMP085_ADDRESS);
@@ -122,8 +130,7 @@ int16_t bmp085ReadInt(byte address)
 
   Wire.requestFrom(BMP085_ADDRESS, 2);
 
-  while(Wire.available()<2) {
-  }
+  while(Wire.available()<2) {}
 
   unsigned char msb = Wire.read();
   unsigned char lsb = Wire.read();
@@ -166,6 +173,8 @@ unsigned long bmp085ReadUP(){
 
 // ========================================================================================
 // calculate altitude by pressure value
+// ========================================================================================
+// pressure = set the pressure value
 float calcAltitude(float pressure){
   float alti = pow((pressure/101325),(1/5.25588));
   return (1 - alti) /0.0000225577;
