@@ -13,6 +13,7 @@
 //                3. Connect to a central application or service
 // ========================================================================================
 
+#include <ESP8266WiFi.h>
 #include <Wire.h>                   
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>               // this library has the specific mode for 64x48 display
@@ -20,8 +21,18 @@
 #define BMP085_ADDRESS 0x77                 // standard address of BMP180 Sensor
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
 
+
 // ========================================================================================
-// Setup
+// WLAN
+const char* mSsid = "wlanName";
+const char* mPassword = "wlanPassword";
+
+WiFiServer mServer(80);
+IPAddress mIp(192, 168, 20, 99);             // where xx is the desired IP Address
+IPAddress mGateway(192, 168, 20, 1);         // set gateway to match your network
+
+// ========================================================================================
+// Setup display and offset for sensors
 
 const byte OSS = 0;                         // BMP180, Oversampling Setting
 Adafruit_SSD1306 mOled(0);                  // set pins for D1 and D2 for the I²C connection pins
@@ -55,6 +66,8 @@ void setup() {
   Wire.setClock(400000);                    // set the standard clock is 100kHz, but set fast mode
                                             // not sure it is the real standard value of using 'wire'.
 
+  StartWebserver();                         // Connect to WiFi network
+
   Bmp180Calibration();                      // get the calibration value for the BMP180 results for any calculations.  
   Htu21PrepareSensor();                     // make a softreset
   
@@ -77,10 +90,12 @@ void loop() {
   OledPrintTitleAndValue(2, "P: ", mPressure / 100.0);
   
   OledPrintDiagramResults();                // Render the temperature results to a diagram 
-  mOled.display();  
+  mOled.display(); 
+
+  PrintOnWebsite(50);                       // post on website, if calling by webbrowser
 
   //PrintAllResults();                      // print all finsihed results
-  delay(50);
+  //delay(50);
 }
 
 // ========================================================================================

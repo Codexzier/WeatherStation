@@ -5,10 +5,10 @@
 // ========================================================================================
 // Setup the base configuration
 void OledSetup() {
-  mOled.begin(SSD1306_SWITCHCAPVCC, 0x3C);      // set address
-  mOled.clearDisplay();                         // Clear the display's memory (gets rid of artifacts)
-  mOled.setTextSize(1);                         // set font size
-  mOled.setTextColor(WHITE);                    // set color
+  mOled.begin(SSD1306_SWITCHCAPVCC, 0x3C);            // set address
+  mOled.clearDisplay();                               // Clear the display's memory (gets rid of artifacts)
+  mOled.setTextSize(1);                               // set font size
+  mOled.setTextColor(WHITE);                          // set color
   mOled.display();                              
 }
 
@@ -24,7 +24,7 @@ void OledPrintTitleAndValue(int row, String text, float value) {
   mOled.setCursor(0, row * 10);                       // set position for text info
   mOled.print(text);                            
 
-  mOled.setCursor(GetCursorPosition(value), row * 10);             // set position for value
+  mOled.setCursor(GetCursorPosition(value), row * 10);// set position for value
   mOled.print(value, 3);
 }
 

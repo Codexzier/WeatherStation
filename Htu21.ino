@@ -36,7 +36,7 @@ void Htu21Setup() {
   Serial.println();
 
   Wire.beginTransmission(HTU21D_ADDRESS);
-  Wire.write(0xE6);                         // command for write register command
+  Wire.write(0xE6);                                       // command for write register command
   Htu21WriteRegisterSetting(mMeasurementOption, mOnChipHeater, mOtpReload);
   Wire.endTransmission();
 
@@ -46,14 +46,14 @@ void Htu21Setup() {
 
 void Htu21ReadUserRegister() {
   
-  Htu21WriteCommand(0xE7);                  // command for read user register
+  Htu21WriteCommand(0xE7);                                // command for read user register
 
-  Wire.requestFrom(HTU21D_ADDRESS, 1);      // wait for register content
+  Wire.requestFrom(HTU21D_ADDRESS, 1);                    // wait for register content
   while(Wire.available() < 1) { }
 
   byte regCon = Wire.read();
   Serial.print("\tRegister Result: "); 
-  Serial.println(regCon, BIN);              // set decimal to bit and look to datasheet
+  Serial.println(regCon, BIN);                            // set decimal to bit and look to datasheet
 }
 
 // ========================================================================================
@@ -71,7 +71,7 @@ void Htu21WriteRegisterSetting(int measurement, bool enableHeader, bool otpReloa
   byte command = 0x00;
 
   if(measurement > 0) {
-    command |= (byte)(measurement << 6);      // set the bits for the measurement resultion
+    command |= (byte)(measurement << 6);                  // set the bits for the measurement resultion
   }
 
   Serial.print("\tMeasurement resolution: ");
@@ -83,16 +83,16 @@ void Htu21WriteRegisterSetting(int measurement, bool enableHeader, bool otpReloa
   }
 
   if(enableHeader) {
-    command |= 0x02;                          // set the bit for enable
+    command |= 0x02;                                      // set the bit for enable
   }
   Serial.print("\tOn-Chip header: \t\t"); Serial.println(enableHeader, BIN);
 
-  if(!otpReload) {                            // Invert enter, well from datasheet is disable if on
-    command |= 0x01;                          // set the bit for disable
+  if(!otpReload) {                                        // Invert enter, well from datasheet is disable if on
+    command |= 0x01;                                      // set the bit for disable
   }
   Serial.print("\tOTP Reload: \t\t\t"); Serial.println(enableHeader, BIN);
 
-  Wire.write(command);                        // write the finish command
+  Wire.write(command);                                    // write the finish command
 }
 
 // ========================================================================================
@@ -105,10 +105,10 @@ void Htu21ReadSensor(bool printOn) {
     Serial.println("Read HTU21D sensor:");
   }
   
-  uint16_t rawTemperature = GetMeasurement(0xE3, 60);    // temperature max time for 14bit result
-                                                        // need 58ms
-  uint16_t rawHumidity = GetMeasurement(0xE5, 20);       // humidity max time for 12bit result
-                                                        // need 18ms
+  uint16_t rawTemperature = GetMeasurement(0xE3, 60);     // temperature max time for 14bit result
+                                                          // need 58ms
+  uint16_t rawHumidity = GetMeasurement(0xE5, 20);        // humidity max time for 12bit result
+                                                          // need 18ms
 
   float temperatur = GetTemperature(rawTemperature);
   mHumidity = GetHumidity(rawHumidity);
@@ -148,15 +148,15 @@ uint16_t GetMeasurement(byte command, int measureTime) {
 
   Htu21WriteCommand(command);
 
-  delay(measureTime);                           // wait 50ms, need delay to wait finish
+  delay(measureTime);                                     // wait 50ms, need delay to wait finish
   
   Wire.requestFrom(HTU21D_ADDRESS, 3);
   int timeOut = 0;
   while(Wire.available() < 3) {
     
-    if(timeOut > 10) {                          // break while if wait to long for request
-      int res = Wire.available();               // get moment available bytes
-      Serial.print("result available: ");       // it only for debug 
+    if(timeOut > 10) {                                    // break while if wait to long for request
+      int res = Wire.available();                         // get moment available bytes
+      Serial.print("result available: ");                 // it only for debug 
       Serial.println(res, DEC);
       break;
     }
@@ -166,11 +166,11 @@ uint16_t GetMeasurement(byte command, int measureTime) {
 
   byte msb = Wire.read();
   byte lsb = Wire.read();
-  byte checksum = Wire.read();                  // Checksum result, but now is not use 
+  byte checksum = Wire.read();                            // Checksum result, but now is not use 
 
   uint16_t bitResult = ((uint16_t)msb << 8) | (lsb);
   
-  bitResult &= 0xFFFC;                          // set the last two status bits to zero
+  bitResult &= 0xFFFC;                                    // set the last two status bits to zero
 
   return bitResult;
 }
