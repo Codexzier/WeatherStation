@@ -8,9 +8,8 @@
 // Actor:         OLED SSD1306 64x48
 // Description:   Ein kleines Projekt einer Wetterstation mit zwei Sensor Modulen.
 // ========================================================================================
-// Open Tasks:    1. Webserver
-//                2. HTML and JavaScript
-//                3. Connect to a central application or service
+// Open Tasks:    1. HTML and JavaScript
+//                2. Connect to a central application or service
 // ========================================================================================
 
 #include <ESP8266WiFi.h>
@@ -20,7 +19,6 @@
 
 #define BMP085_ADDRESS 0x77                 // standard address of BMP180 Sensor
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
-
 
 // ========================================================================================
 // WLAN
@@ -57,6 +55,16 @@ float mTemperaturesArray[64];               // an array of 64 result
                                             // it used for the bottom diagram
 
 // ========================================================================================
+// ground humidity status by analog sensor
+
+int mPinInputSignal = A0;                   // pin for read the analog signal
+int mInputValue = 0;                        // hold the actual analog measurement
+int mInputValueMax = 0;                     // hold the max value of measurement
+int mInputValueMin = 1024;                  // hold the min value of measuerment
+                                            // Min and max value can be usful to find out 
+                                            // the value for a other target to do.
+
+// ========================================================================================
 void setup() {
   Serial.begin(115200);
   Serial.println();                         // only one row. 
@@ -66,18 +74,20 @@ void setup() {
   Wire.setClock(400000);                    // set the standard clock is 100kHz, but set fast mode
                                             // not sure it is the real standard value of using 'wire'.
 
+  OledSetup();                              // base OLED setup. Start, Clear, fontsize and set font type.
+  
   StartWebserver();                         // Connect to WiFi network
 
   Bmp180Calibration();                      // get the calibration value for the BMP180 results for any calculations.  
   Htu21PrepareSensor();                     // make a softreset
   
-  OledSetup();                              // base OLED setup. Start, Clear, fontsize and set font type.
-
   SetActualTemperatureToDiagrammArray();    // read temperature and write it to all array index
 }
 
 // ========================================================================================
 void loop() {
+
+  ReadAnalogInput();                        // read sensor with an analog signal result
 
   Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
   Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
@@ -88,6 +98,7 @@ void loop() {
   OledPrintTitleAndValue(0, "T: ", mTemperaturesArray[mIndex] + mOffsetTemperature);
   OledPrintTitleAndValue(1, "H: ", mHumidity + mOffsetHumidity);
   OledPrintTitleAndValue(2, "P: ", mPressure / 100.0);
+  OledPrintTitleAndValue(3, "W:", mInputValue);
   
   OledPrintDiagramResults();                // Render the temperature results to a diagram 
   mOled.display(); 
@@ -96,6 +107,21 @@ void loop() {
 
   //PrintAllResults();                      // print all finsihed results
   //delay(50);
+}
+
+// ========================================================================================
+// read the one pin for analog signal
+void ReadAnalogInput(){
+  
+  mInputValue = analogRead(mPinInputSignal);
+
+  if(mInputValue > mInputValueMax) {
+    mInputValueMax = mInputValue;
+  }
+
+  if(mInputValue < mInputValueMin) {
+    mInputValueMin = mInputValue;
+  }
 }
 
 // ========================================================================================

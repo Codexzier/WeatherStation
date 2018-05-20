@@ -28,7 +28,25 @@ void OledPrintTitleAndValue(int row, String text, float value) {
   mOled.print(value, 3);
 }
 
+// ========================================================================================
+// Write a text to the oled display
+// ========================================================================================
+// row          = write the text to the target row.
+// columnValue  = set the werite position
+// text         = write a text, but only place for two chars
+void OledPrintTitle(int row, String text) {
+
+  mOled.setCursor(0, row * 10);                       // set position for text info
+  mOled.print(text);
+}
+
+// ========================================================================================
+// get a proof value for the cursor position.
+// this is importan to write a value aligned with the right border.
+// ========================================================================================
+// value      = set the value 
 int GetCursorPosition(float value) {
+  
   if(value >= 1000) {
     return 13;
   }
@@ -46,7 +64,7 @@ int GetCursorPosition(float value) {
 // render result of temperature results to a diagram view
 void OledPrintDiagramResults() {
 
-  int maxHightPixels = 16;                            // max height range for diagram show
+  int maxHightPixels = 5;                            // max height range for diagram show
   
   float temperatureMax = 0.0;                         // set the max measure of temperature
   float temperatureMin = 100.0;                       // set the min measure of temperature
@@ -81,4 +99,3 @@ void OledPrintDiagramResults() {
     }
   }
 }
-

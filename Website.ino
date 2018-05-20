@@ -6,6 +6,7 @@
 // client received
 
 WiFiClient mWebclient;
+boolean mIsConnected = false;
 
 // ========================================================================================
 // start webserver and print information on serial
@@ -20,11 +21,49 @@ void StartWebserver() {
   IPAddress subnet(255, 255, 255, 0);                   // set subnet mask to match your network
   WiFi.config(mIp, mGateway,subnet); 
   WiFi.begin(mSsid, mPassword);
- 
+
+  int waitConnectingCount = 0;
+  mOled.clearDisplay();
+  OledPrintTitle(0, "Connecting to WLAN");
+  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(1000);
+
+    mOled.clearDisplay();
+    OledPrintTitle(0, "Connecting");
+    OledPrintTitle(1, "to WLAN");
+    OledPrintTitleAndValue(2, "wait: ", waitConnectingCount);
+    mOled.display(); 
     Serial.print(".");
+    
+    if(waitConnectingCount >= 10) {
+      
+      mOled.clearDisplay();
+      OledPrintTitle(0, "Connecting Fail");
+      mOled.display(); 
+      delay(500);
+      break;
+    }
+    
+    waitConnectingCount++;
   }
+
+  if(waitConnectingCount >= 10) {
+    
+    mOled.clearDisplay();
+    OledPrintTitle(0, "No WiFi");
+    mOled.display(); 
+    delay(1000);
+    return;
+  }
+
+  mIsConnected = true;
+
+  mOled.clearDisplay();
+  OledPrintTitle(0, "WiFi connected");
+  mOled.display(); 
+  delay(500);
+    
   Serial.println();
   Serial.println("WiFi connected");
  
@@ -41,6 +80,10 @@ void StartWebserver() {
 // ========================================================================================
 // timeout = set max time to wait for incoming data.
 void PrintOnWebsite(int timeout) {
+
+  if(!mIsConnected) {
+    return;
+  }
   
   mWebclient = mServer.available();
   if (!mWebclient) {
@@ -49,10 +92,15 @@ void PrintOnWebsite(int timeout) {
   if (!WaitClientSendsData(timeout)) {
     return;
   }
+
+  mOled.clearDisplay();
+  OledPrintTitle(0, "Running");
+  OledPrintTitle(1, "web access");
+  mOled.display(); 
   
   mWebclient.println("HTTP/1.1 200 OK");
   mWebclient.println("Content-Type: text/html");
-  mWebclient.println(""); //  do not forget this one
+  mWebclient.println("");                               //  do not forget this one
   mWebclient.println("<!DOCTYPE HTML>");
   mWebclient.println("<html>");
 
@@ -115,6 +163,18 @@ void PrintHtmlBody() {
   mWebclient.println("     <div class=\"divTableCell\">");
   mWebclient.print(mPressure / 100.0);
   mWebclient.println(" hPa");
+  mWebclient.println("     </div>");
+  mWebclient.println("    </div>");
+
+  mWebclient.println("    <div class=\"divTableRow\">");
+  mWebclient.println("     <div class=\"divTableCellLeft\">Ground humidity</div>");
+  mWebclient.println("     <div class=\"divTableCell\">");
+  mWebclient.print(mInputValue);
+  mWebclient.print(", Min: ");
+  mWebclient.print(mInputValueMin);
+  mWebclient.print(", Max: ");
+  mWebclient.print(mInputValueMax);
+  mWebclient.println(" ");
   mWebclient.println("     </div>");
   mWebclient.println("    </div>");
   
