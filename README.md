@@ -1,8 +1,8 @@
 # WeatherStation
-Ein kleines Beispiel Projekt mit zwei (drei) sensoren und einer Display.
-Zusätzlich kömmem die Ergebnisse können auch über das WLAN abegrufen werden.
+Ein kleines Beispiel Projekt mit zwei (drei) sensoren und einem Display.
+Zusätzlich könnem die Ergebnisse über das WLAN und mit einem Webbrowser abgerufen werden.
 
-Controller:     WEMOS D1 Mini
+Controller:     WEMOS D1 Mini\n
 Sensors:        HTU21, BMP180
 Actor:          OLED SSD1306 64x48
 
