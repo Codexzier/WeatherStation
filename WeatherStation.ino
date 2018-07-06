@@ -12,6 +12,12 @@
 //                2. Connect to a central application or service
 // ========================================================================================
 
+#include <Time.h>
+#include <TimeLib.h>
+
+#include <SPI.h>
+#include <SD.h>                             // library for the sd card
+
 #include <ESP8266WiFi.h>
 #include <Wire.h>                   
 #include <Adafruit_GFX.h>
@@ -20,6 +26,20 @@
 #define BMP085_ADDRESS 0x77                 // standard address of BMP180 Sensor
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
 
+// ========================================================================================
+// SD Card
+Sd2Card mCard;
+SdVolume mVolume;
+SdFile mRoot;
+const int mChipSelect = D8;
+
+boolean mSdCardOk = false;                  // set true, if sd card success initialized.
+int mPerSecond = 10;                       // save only by any secound
+int mLastSecond = 0;
+int mCountSecond = 0;
+
+int32_t mMeasureCount = 0;
+String mStringMeasurement = "";
 // ========================================================================================
 // WLAN
 const char* mSsid = "wlanName";
@@ -37,6 +57,10 @@ Adafruit_SSD1306 mOled(0);                  // set pins for D1 and D2 for the IÂ
 
 float mOffsetTemperature = 22.4 - 25.9;     // set offset the temperature result from a reference sensor
 float mOffsetHumidity = 41.0 - 30.0;        // set offset the humidity result from reference sensor
+
+#if (SSD1306_LCDHEIGHT != 48)
+#error("You musst changed in Adafruit_SSD1306.h!"); // Check the right setting display resulotion.
+#endif
 
 // ========================================================================================
 // Result variables
@@ -82,6 +106,8 @@ void setup() {
   Htu21PrepareSensor();                     // make a softreset
   
   SetActualTemperatureToDiagrammArray();    // read temperature and write it to all array index
+
+  SdCardInitSdCard();                             // check sd card exist and show some information.
 }
 
 // ========================================================================================
@@ -104,6 +130,23 @@ void loop() {
   mOled.display(); 
 
   PrintOnWebsite(50);                       // post on website, if calling by webbrowser
+
+
+  
+  
+  unsigned long nowSec = second();
+  if(nowSec != mLastSecond) {
+    mCountSecond++;
+  }
+  mLastSecond = second();
+
+  if(mCountSecond > mPerSecond) {
+
+    Serial.println("Save data to sd card");
+    SdCardSave();
+    mCountSecond = 0;
+    mStringMeasurement = "";
+  }
 
   //PrintAllResults();                      // print all finsihed results
   //delay(50);

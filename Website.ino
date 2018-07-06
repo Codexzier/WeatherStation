@@ -36,7 +36,7 @@ void StartWebserver() {
     mOled.display(); 
     Serial.print(".");
     
-    if(waitConnectingCount >= 10) {
+    if(waitConnectingCount >= 5) {
       
       mOled.clearDisplay();
       OledPrintTitle(0, "Connecting Fail");
