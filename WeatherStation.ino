@@ -131,25 +131,35 @@ void loop() {
 
   PrintOnWebsite(50);                       // post on website, if calling by webbrowser
 
-
+  CountUp();                                // up counter
+  SaveToSdCard();                           // save collected measure data
   
+  //PrintAllResults();                      // print all finsihed results
+  //delay(50);
+}
+
+// ========================================================================================
+// Set count one up, if it next second
+void CountUp() {
   
   unsigned long nowSec = second();
   if(nowSec != mLastSecond) {
     mCountSecond++;
   }
   mLastSecond = second();
+}
 
-  if(mCountSecond > mPerSecond) {
+// ========================================================================================
+// If sd card initialize success, the readed data can save
+void SaveToSdCard() {
+  
+  if(mSdCardOk && mCountSecond > mPerSecond) {
 
     Serial.println("Save data to sd card");
     SdCardSave();
     mCountSecond = 0;
     mStringMeasurement = "";
   }
-
-  //PrintAllResults();                      // print all finsihed results
-  //delay(50);
 }
 
 // ========================================================================================
@@ -181,6 +191,7 @@ void RecordTemperatureToArray() {
 // need the actual temperature to display non initial zero value.
 // it only a optical start optimzing
 void SetActualTemperatureToDiagrammArray() {
+  
   // set first measure to array
   Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
   Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
@@ -193,6 +204,7 @@ void SetActualTemperatureToDiagrammArray() {
 // ========================================================================================
 // all readed sensor and calculation results write out to serial
 void PrintAllResults() {
+  
   Serial.println("-----------------------");
   Serial.print("\tHumidity: "); 
   Serial.println(mHumidity, 2);
