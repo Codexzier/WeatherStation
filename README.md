@@ -12,3 +12,4 @@ Actor:          OLED SSD1306 64x48
 Offene Inhalte: 
 1. HTML (and javaScript)  
 2. Connect to a central application or service
+3. Show diagram on HTML side
