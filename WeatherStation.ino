@@ -10,6 +10,8 @@
 // ========================================================================================
 // Open Tasks:    1. HTML and JavaScript
 //                2. Connect to a central application or service
+//                3. Show saved data on HTML side
+//                4. to set the time
 // ========================================================================================
 
 #include <Time.h>
@@ -34,7 +36,7 @@ SdFile mRoot;
 const int mChipSelect = D8;
 
 boolean mSdCardOk = false;                  // set true, if sd card success initialized.
-int mPerSecond = 10;                       // save only by any secound
+int mPerSecond = 10;                       // save only by X secound
 int mLastSecond = 0;
 int mCountSecond = 0;
 
