@@ -8,10 +8,9 @@
 // Actor:         OLED SSD1306 64x48
 // Description:   Ein kleines Projekt einer Wetterstation mit zwei Sensor Modulen.
 // ========================================================================================
-// Open Tasks:    1. HTML and JavaScript
-//                2. Connect to a central application or service
-//                3. Show saved data on HTML side
-//                4. to set the time
+// Open Tasks:    1. Connect to a central application or service
+//                2. Show saved data on HTML side
+//                3. to set the time
 // ========================================================================================
 
 #include <Time.h>
@@ -27,6 +26,8 @@
 
 #define BMP085_ADDRESS 0x77                 // standard address of BMP180 Sensor
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
+#define DS1307_I2C_ADDRESS 0x68             // standard address of datalogger shield
+
 
 // ========================================================================================
 // SD Card
@@ -36,7 +37,7 @@ SdFile mRoot;
 const int mChipSelect = D8;
 
 boolean mSdCardOk = false;                  // set true, if sd card success initialized.
-int mPerSecond = 10;                       // save only by X secound
+int mPerSecond = 10;                        // save only by X secound
 int mLastSecond = 0;
 int mCountSecond = 0;
 
@@ -51,6 +52,38 @@ WiFiServer mServer(80);
 IPAddress mIp(192, 168, 20, 99);             // where xx is the desired IP Address
 IPAddress mGateway(192, 168, 20, 1);         // set gateway to match your network
 
+// ========================================================================================
+// for connecting to ntp
+
+//RTC_DS1307 RTC;
+
+unsigned int localPort = 8888;              // local port to listen for UDP packets
+
+// find your local ntp server http://www.pool.ntp.org/zone/europe or 
+// http://support.ntp.org/bin/view/Servers/StratumTwoTimeServers
+// byte timeServer[] = {192, 43, 244, 18}; // time.nist.gov NTP server
+byte timeServer[] = {193, 79, 237, 14};    // ntp1.nl.net NTP server  
+
+const int NTP_PACKET_SIZE= 48;             // NTP time stamp is in the first 48 bytes of the message
+byte pb[NTP_PACKET_SIZE];                  // buffer to hold incoming and outgoing packets 
+
+// for displaying day
+String mDaysOfWeek[8] = {"","Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"};
+
+byte mActualDateTime[7];                  // secound, minute, hour, day, day of month, month, year
+
+//"Day;Month;Year;Hour;Minute;Temperature;Humidity;Pressure;"
+// for save average data
+int mActualDay = -1;
+int mActualMonth = -1;
+int mActualYear = -1;
+int mActualHour = -1;
+//int mActualMinute = -1;
+
+float mAverageTemperature = -1;
+float mAverageHumidity = -1;
+float mAveragePressure = -1;
+ 
 // ========================================================================================
 // Setup display and offset for sensors
 
@@ -97,7 +130,7 @@ void setup() {
                                             // sometime the controller shows other unencoded chars
   
   Wire.begin();                             // Start the I²C 
-  Wire.setClock(400000);                    // set the standard clock is 100kHz, but set fast mode
+  Wire.setClock(100000);                    // set the standard clock is 100kHz, but set fast mode
                                             // not sure it is the real standard value of using 'wire'.
 
   OledSetup();                              // base OLED setup. Start, Clear, fontsize and set font type.
@@ -109,7 +142,10 @@ void setup() {
   
   SetActualTemperatureToDiagrammArray();    // read temperature and write it to all array index
 
-  SdCardInitSdCard();                             // check sd card exist and show some information.
+  SdCardInitSdCard();                       // check sd card exist and show some information.
+
+  pinMode(mChipSelect, OUTPUT);             // pin select for sd card
+  //SetupDS1307(01,14,1,7,4,19);              // Setup the actual date time
 }
 
 // ========================================================================================
@@ -119,6 +155,7 @@ void loop() {
 
   Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
   Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
+  ReadBinarDs1307();       // read actual date time from rtc modul
 
   RecordTemperatureToArray();               // record temperature for diagram output
   
@@ -131,11 +168,12 @@ void loop() {
   OledPrintDiagramResults();                // Render the temperature results to a diagram 
   mOled.display(); 
 
-  PrintOnWebsite(50);                       // post on website, if calling by webbrowser
+  PrintOnWebsite(50, true);                 // post on website, if calling by webbrowser
 
   CountUp();                                // up counter
   SaveToSdCard();                           // save collected measure data
-  
+    
+                                            // save data for webside
   //PrintAllResults();                      // print all finsihed results
   //delay(50);
 }
@@ -225,4 +263,3 @@ void PrintAllResults() {
   Serial.println("-----------------------");
   Serial.println();
 }
-

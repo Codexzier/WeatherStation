@@ -40,6 +40,7 @@ void Htu21Setup() {
   Htu21WriteRegisterSetting(mMeasurementOption, mOnChipHeater, mOtpReload);
   Wire.endTransmission();
 
+  Serial.println();
   Serial.println("Read setup after set:");
   Htu21ReadUserRegister();
 }
