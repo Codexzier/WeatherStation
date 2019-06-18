@@ -50,7 +50,7 @@ void Htu21ReadUserRegister() {
   Htu21WriteCommand(0xE7);                                // command for read user register
 
   Wire.requestFrom(HTU21D_ADDRESS, 1);                    // wait for register content
-  while(Wire.available() < 1) { }
+  //while(Wire.available() < 1) { }
 
   byte regCon = Wire.read();
   Serial.print("\tRegister Result: "); 
@@ -152,18 +152,6 @@ uint16_t GetMeasurement(byte command, int measureTime) {
   delay(measureTime);                                     // wait 50ms, need delay to wait finish
   
   Wire.requestFrom(HTU21D_ADDRESS, 3);
-  int timeOut = 0;
-  while(Wire.available() < 3) {
-    
-    if(timeOut > 10) {                                    // break while if wait to long for request
-      int res = Wire.available();                         // get moment available bytes
-      Serial.print("result available: ");                 // it only for debug 
-      Serial.println(res, DEC);
-      break;
-    }
-    timeOut++;
-    delay(10);
-  }
 
   byte msb = Wire.read();
   byte lsb = Wire.read();

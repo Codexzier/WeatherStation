@@ -130,8 +130,6 @@ int16_t bmp085ReadInt(byte address)
 
   Wire.requestFrom(BMP085_ADDRESS, 2);
 
-  while(Wire.available()<2) {}
-
   unsigned char msb = Wire.read();
   unsigned char lsb = Wire.read();
   return (int16_t) msb << 8 | lsb;
