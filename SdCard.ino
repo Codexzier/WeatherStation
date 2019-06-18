@@ -3,6 +3,12 @@
 // ========================================================================================
 
 // ========================================================================================
+// filenames
+String mWeather = String("weather.csv");
+String mWeatherAverageData = String("weatherAverage.csv");
+String mWeatherLastWeek = String("weatherAverageLastWeek");
+
+// ========================================================================================
 // Initialized and check the sd card type. 
 // If success, after then can save the measurement data
 void SdCardInitSdCard() {
@@ -106,7 +112,7 @@ void SdCardSave() {
 
   //SdCardCreateFileAndTableHeader();                   // create new file and header informations
   
-  File dataFile = SD.open("weather.csv", FILE_WRITE);
+  File dataFile = SD.open(mWeather, FILE_WRITE);
 
   if(!dataFile) {                                     // if file not exist
     OledPrintTitle(3, "SD ERROR");
@@ -141,7 +147,7 @@ void SdCardSaveWebsiteContent() {
   // TODO: Not finish. Need to write data to the file and 
   //       need a reading and prepare data for the webside
 
-  File dataFile = SD.open("weaterAverage.csv", FILE_WRITE);
+  File dataFile = SD.open(mWeatherAverageData, FILE_WRITE);
 
   if(!dataFile) {                                     // if file not exist
 
@@ -165,7 +171,7 @@ void SdCardSaveWebsiteContent() {
 // If the target file not exist, then it create new csv file with csv header information.
 void SdCardCreateFileAndTableHeader() {
 
-  if(SD.exists("weather.csv")){
+  if(SD.exists(mWeather)){
     
     Serial.println("File weather.csv exist...");
     return;    
@@ -175,7 +181,7 @@ void SdCardCreateFileAndTableHeader() {
 
   Serial.println("Create weather.csv file...");
   
-  File dataFile = SD.open("weather.csv", FILE_WRITE);
+  File dataFile = SD.open(mWeather, FILE_WRITE);
   dataFile.println("Nr;Temperature;Humidity;Pressure;Input;");
   dataFile.close();
 }
@@ -184,25 +190,25 @@ void SdCardCreateFileAndTableHeader() {
 // this file will contain average values for the webside call.
 void SdCardCreateFileForWebside(){
 
-  if(!SD.exists("weaterAverage.csv")) {
+  if(!SD.exists(mWeatherAverageData)) {
     
     Serial.println("Create weaterAverage.csv file...");
 
-    File dataFile = SD.open("weaterAverage.csv", FILE_WRITE);
+    File dataFile = SD.open(mWeatherAverageData, FILE_WRITE);
     dataFile.println("Day;Month;Year;Hour;Minute;Temperature;Humidity;Pressure;");
     dataFile.close(); 
   }
 
   Serial.println("File weaterAverage.csv exist...");
 
-  if(SD.exists("weaterAverageLastWeek.csv")) {
+  if(SD.exists(mWeatherLastWeek)) {
     Serial.println("File weaterAverageLastWeek.csv exist...");
     return;    
   }
 
   Serial.println("Create weaterAverageLastWeek.csv file...");
 
-  File dataFile = SD.open("weaterAverageLastWeek.csv", FILE_WRITE);
+  File dataFile = SD.open(mWeatherLastWeek, FILE_WRITE);
   dataFile.println("Day;Month;Year;Hour;Minute;Temperature;Humidity;Pressure;");
   dataFile.close(); 
 }
