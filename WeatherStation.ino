@@ -11,6 +11,7 @@
 // Open Tasks:    1. Connect to a central application or service
 //                2. Show saved data on HTML side
 //                3. to set the time
+//                4. set time from ntp server
 // ========================================================================================
 
 #include <Time.h>
@@ -23,6 +24,7 @@
 #include <Wire.h>                   
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>               // this library has the specific mode for 64x48 display
+#include <ArduinoJson.h>                    // library to write and read json format data
 
 #define BMP085_ADDRESS 0x77                 // standard address of BMP180 Sensor
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
@@ -72,6 +74,49 @@ String mDaysOfWeek[8] = {"","Sonntag","Montag","Dienstag","Mittwoch","Donnerstag
 
 byte mActualDateTime[7];                  // secound, minute, hour, day, day of month, month, year
 
+// ========================================================================================
+// measure data object
+class MeasureData {
+
+  public:
+    int Day;
+    int Month;
+    int Year;
+    int Hour;
+    int Minute;
+    float Temperature;
+    float Humidity;
+    float Pressure;
+
+    // print all values 
+    void Print() {
+      Serial.print("Day "); Serial.print(Day, DEC); Serial.print(" ");
+      Serial.print("Month "); Serial.print(Month, DEC); Serial.print(" ");
+      Serial.print("Year "); Serial.print(Year, DEC); Serial.print(" ");
+
+      Serial.print("Hour "); Serial.print(Hour, DEC); Serial.print(" ");
+      Serial.print("Minute "); Serial.print(Minute, DEC); Serial.print(" ");
+
+      Serial.print("Temperature "); Serial.print(Temperature, DEC); Serial.print(" ");
+      Serial.print("Humidity "); Serial.print(Humidity, DEC); Serial.print(" ");
+      Serial.print("Pressure "); Serial.print(Pressure, DEC); Serial.println(" ");
+    }
+
+    void ReadFromJson(JsonObject measure) {
+      Day = measure["Day"];
+      Month = measure["Month"];
+      Year = measure["Year"];
+      Hour = measure["Hour"];
+      Minute = measure["Minute"];
+      Temperature = measure["Temperature"];
+      Humidity = measure["Humidity"];
+      Pressure = measure["Pressure"];
+    }
+};
+
+// ========================================================================================
+// record average data 
+
 //"Day;Month;Year;Hour;Minute;Temperature;Humidity;Pressure;"
 // for save average data
 int mActualDay = -1;
@@ -83,7 +128,7 @@ int mActualHour = -1;
 float mAverageTemperature = -1;
 float mAverageHumidity = -1;
 float mAveragePressure = -1;
- 
+
 // ========================================================================================
 // Setup display and offset for sensors
 
@@ -145,7 +190,8 @@ void setup() {
   SdCardInitSdCard();                       // check sd card exist and show some information.
 
   pinMode(mChipSelect, OUTPUT);             // pin select for sd card
-  //SetupDS1307(01,14,1,7,4,19);              // Setup the actual date time
+
+  //SetupDS1307(01,14,1,7,4,19);              // Setup the actual date time (Method to check rtc time is planed)
 }
 
 // ========================================================================================
