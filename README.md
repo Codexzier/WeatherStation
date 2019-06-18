@@ -9,8 +9,11 @@ Sensors:        HTU21, BMP180
 
 Actor:          OLED SSD1306 64x48
 
+Persist data:   DataLog Shield 
+
 
 # Offene Inhalte: 
-1. HTML (and javaScript)  
-2. Connect to a central application or service
-3. Show diagram on HTML side
+1. Connect to a central application or service
+2. Show diagram on HTML side
+3. to set the time
+4. set time from ntp server
