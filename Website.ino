@@ -19,7 +19,7 @@ void StartWebserver() {
   Serial.print("Connecting to ");
   Serial.println(mSsid);
   IPAddress subnet(255, 255, 255, 0);                   // set subnet mask to match your network
-  WiFi.config(mIp, mGateway,subnet); 
+  WiFi.config(mIp, mGateway, subnet); 
   WiFi.begin(mSsid, mPassword);
 
   int waitConnectingCount = 0;
@@ -172,13 +172,13 @@ void PrintHtmlBody() {
   mWebclient.println("    </div>");
 
   mWebclient.println("    <div class=\"divTableRow\">");
-  mWebclient.println("     <div class=\"divTableCellLeft\">Ground humidity</div>");
+  mWebclient.println("     <div class=\"divTableCellLeft\">UV Sensor</div>");
   mWebclient.println("     <div class=\"divTableCell\">");
-  mWebclient.print(mInputValue);
+  mWebclient.print(mInputUvValue);
   mWebclient.print(", Min: ");
-  mWebclient.print(mInputValueMin);
+  mWebclient.print(mInputUvValueMin);
   mWebclient.print(", Max: ");
-  mWebclient.print(mInputValueMax);
+  mWebclient.print(mInputUvValueMax);
   mWebclient.println(" ");
   mWebclient.println("     </div>");
   mWebclient.println("    </div>");
@@ -304,6 +304,14 @@ void printWebsideDashboardBodyPart1(){
   mWebclient.println("<div class=\"border-cell\">Altitude </div>");
   mWebclient.println("<div class=\"border-cell\">");
   mWebclient.print(mAltitude);
+  mWebclient.println(" m");
+  mWebclient.println("</div>");
+  mWebclient.println("</div>");
+
+  mWebclient.println("<div class=\"d-flex\">");
+  mWebclient.println("<div class=\"border-cell\">UV </div>");
+  mWebclient.println("<div class=\"border-cell\">");
+  mWebclient.print(mInputUvValue);
   mWebclient.println(" m");
   mWebclient.println("</div>");
   mWebclient.println("</div>");

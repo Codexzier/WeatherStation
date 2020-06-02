@@ -127,7 +127,7 @@ void SdCardSave() {
   data += String(mTemperaturesArray[mIndex] + mOffsetTemperature) + ";";
   data += String(mHumidity + mOffsetHumidity) + ";";
   data += String(mPressure / 100.0) + ";";
-  data += String(mInputValue) + ";";
+  data += String(mInputUvValue) + ";";
   mStringMeasurement += data;
   
   dataFile.println(mStringMeasurement);

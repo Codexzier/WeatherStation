@@ -4,7 +4,7 @@
 // Projekt:       Weatherstation
 // Author:        Johannes P. Langner
 // Controller:    WEMOS D1 Mini
-// Sensors:       HTU21, BMP180
+// Sensors:       HTU21, BMP180, MPU60xx, HMC5883l, ML8511
 // Actor:         OLED SSD1306 64x48
 // Description:   Ein kleines Projekt einer Wetterstation mit zwei Sensor Modulen.
 // ========================================================================================
@@ -12,6 +12,9 @@
 //                2. Show saved data on HTML side
 //                3. to set the time
 //                4. set time from ntp server
+//                5. to implement MPU60xx (Gyro and acceleration sensor)
+//                6. to implement HMC5883l (Magnometer)
+//                7. to implement ML8511 (UV Sensor)
 // ========================================================================================
 
 #include <Time.h>
@@ -30,6 +33,10 @@
 #define HTU21D_ADDRESS 0x40                 // standard address of HTU21, HTU21D or SHT21
 #define DS1307_I2C_ADDRESS 0x68             // standard address of datalogger shield
 
+#define MPU60xx_ADDRESS 0x68                // standard address of mpu60xx sensor
+
+#define HMC5883l_ADDRESS 0x1E               // standard address
+
 
 // ========================================================================================
 // SD Card
@@ -45,14 +52,17 @@ int mCountSecond = 0;
 
 int32_t mMeasureCount = 0;
 String mStringMeasurement = "";
+
 // ========================================================================================
 // WLAN
-const char* mSsid = "wlanName";
-const char* mPassword = "wlanPassword";
+const char* mSsid = "ButzBox";
+const char* mPassword = "05-nov-1982";
+//const char* mSsid = "wlanName";
+//const char* mPassword = "wlanPassword";
 
 WiFiServer mServer(80);
-IPAddress mIp(192, 168, 20, 99);             // where xx is the desired IP Address
-IPAddress mGateway(192, 168, 20, 1);         // set gateway to match your network
+IPAddress mIp(192, 168, 178, 99);             // where xx is the desired IP Address
+IPAddress mGateway(192, 168, 178, 1);         // set gateway to match your network
 
 // ========================================================================================
 // for connecting to ntp
@@ -84,9 +94,24 @@ class MeasureData {
     int Year;
     int Hour;
     int Minute;
+    
     float Temperature;
     float Humidity;
     float Pressure;
+    
+    int AccelerationX;
+    int AccelerationY;
+    int AccelerationZ;
+
+    int GyroscopeX;
+    int GyroscopeY;
+    int GyroscopeZ;
+
+    int MagnometerX;
+    int MagnometerY;
+    int MagnometerZ;
+
+    int UV;
 
     // print all values 
     void Print() {
@@ -99,7 +124,23 @@ class MeasureData {
 
       Serial.print("Temperature "); Serial.print(Temperature, DEC); Serial.print(" ");
       Serial.print("Humidity "); Serial.print(Humidity, DEC); Serial.print(" ");
-      Serial.print("Pressure "); Serial.print(Pressure, DEC); Serial.println(" ");
+      Serial.print("Pressure "); Serial.print(Pressure, DEC); Serial.print(" ");
+
+      Serial.print("UV "); Serial.print(UV, DEC); Serial.print(" ");
+
+      Serial.print("Acceleration X "); Serial.print(AccelerationX, DEC); Serial.print(" ");
+      Serial.print("Acceleration Y "); Serial.print(AccelerationY, DEC); Serial.print(" ");
+      Serial.print("Acceleration Z "); Serial.print(AccelerationZ, DEC); Serial.print(" ");
+
+      Serial.print("Gyroscope X "); Serial.print(GyroscopeX, DEC); Serial.print(" ");
+      Serial.print("Gyroscope Y "); Serial.print(GyroscopeY, DEC); Serial.print(" ");
+      Serial.print("Gyroscope Z "); Serial.print(GyroscopeZ, DEC); Serial.print(" ");
+
+      Serial.print("Magnometer X "); Serial.print(MagnometerX, DEC); Serial.print(" ");
+      Serial.print("Magnometer Y "); Serial.print(MagnometerY, DEC); Serial.print(" ");
+      Serial.print("Magnometer Z "); Serial.print(MagnometerZ, DEC); Serial.print(" ");
+
+      Serial.println();
     }
 
     void ReadFromJson(JsonObject measure) {
@@ -108,9 +149,16 @@ class MeasureData {
       Year = measure["Year"];
       Hour = measure["Hour"];
       Minute = measure["Minute"];
+      
       Temperature = measure["Temperature"];
       Humidity = measure["Humidity"];
       Pressure = measure["Pressure"];
+
+      UV = measure["UV"];
+
+      AccelerationX = measure["AccelerationX"];
+      AccelerationY = measure["AccelerationY"];
+      AccelerationZ = measure["AccelerationZ"];
     }
 };
 
@@ -159,14 +207,38 @@ float mTemperaturesArray[64];               // an array of 64 result
                                             // it used for the bottom diagram
 
 // ========================================================================================
-// ground humidity status by analog sensor
+// ML8511 UV Sensor
 
-int mPinInputSignal = A0;                   // pin for read the analog signal
-int mInputValue = 0;                        // hold the actual analog measurement
-int mInputValueMax = 0;                     // hold the max value of measurement
-int mInputValueMin = 1024;                  // hold the min value of measuerment
+int mPinInputUv = A0;                       // pin for read the analog signal
+int mInputUvValue = 0;                      // hold the actual analog measurement
+int mInputUvValueMax = 0;                   // hold the max value of measurement
+int mInputUvValueMin = 1024;                // hold the min value of measuerment
                                             // Min and max value can be usful to find out 
                                             // the value for a other target to do.
+
+// ========================================================================================
+// MPU60xx
+unsigned int mAccX;
+unsigned int mAccY;
+unsigned int mAccZ;
+
+unsigned int mGyroX;
+unsigned int mGyroY;
+unsigned int mGyroZ;
+
+// ========================================================================================
+// HMC5883l
+
+double mMagScale = 0.73;
+double mMagScaledAxisX;
+double mMagScaledAxisY;
+double mMagScaledAxisZ;
+
+float mMagHeadingDegrees;
+
+unsigned int mMagX;
+unsigned int mMagY;
+unsigned int mMagZ;
 
 // ========================================================================================
 void setup() {
@@ -184,6 +256,9 @@ void setup() {
 
   Bmp180Calibration();                      // get the calibration value for the BMP180 results for any calculations.  
   Htu21PrepareSensor();                     // make a softreset
+
+  SetupMpuAccelerationAndGyroscopeSensor(); // setup acceleration and gyroscope
+  SetupHmc5883l();                          // setup magnometer
   
   SetActualTemperatureToDiagrammArray();    // read temperature and write it to all array index
 
@@ -191,6 +266,8 @@ void setup() {
 
   pinMode(mChipSelect, OUTPUT);             // pin select for sd card
 
+  pinMode(mPinInputUv, INPUT);              // pin for input uv value
+  
   //SetupDS1307(01,14,1,7,4,19);              // Setup the actual date time (Method to check rtc time is planed)
 }
 
@@ -201,7 +278,10 @@ void loop() {
 
   Bmp180ReadSensor(false);                  // read bmp180 sensor, get temperatue and pressure, false = detail print off
   Htu21ReadSensor(false);                   // read htu21 sensor, get temperature and humidity, false = detail print off
-  ReadBinarDs1307();       // read actual date time from rtc modul
+  ReadBinarDs1307();                        // read actual date time from rtc modul
+
+  ReadAccelerationAndGyroscope();           // read gyroscope and acceleration sensor
+  Hmc5883lReadCompass();
 
   RecordTemperatureToArray();               // record temperature for diagram output
   
@@ -209,7 +289,7 @@ void loop() {
   OledPrintTitleAndValue(0, "T: ", mTemperaturesArray[mIndex] + mOffsetTemperature);
   OledPrintTitleAndValue(1, "H: ", mHumidity + mOffsetHumidity);
   OledPrintTitleAndValue(2, "P: ", mPressure / 100.0);
-  OledPrintTitleAndValue(3, "W:", mInputValue);
+  OledPrintTitleAndValue(3, "UV:", mInputUvValue);
   
   OledPrintDiagramResults();                // Render the temperature results to a diagram 
   mOled.display(); 
@@ -220,8 +300,8 @@ void loop() {
   SaveToSdCard();                           // save collected measure data
     
                                             // save data for webside
-  //PrintAllResults();                      // print all finsihed results
-  //delay(50);
+  PrintAllResults();                      // print all finsihed results
+  delay(50);
 }
 
 // ========================================================================================
@@ -245,21 +325,6 @@ void SaveToSdCard() {
     SdCardSave();
     mCountSecond = 0;
     mStringMeasurement = "";
-  }
-}
-
-// ========================================================================================
-// read the one pin for analog signal
-void ReadAnalogInput(){
-  
-  mInputValue = analogRead(mPinInputSignal);
-
-  if(mInputValue > mInputValueMax) {
-    mInputValueMax = mInputValue;
-  }
-
-  if(mInputValue < mInputValueMin) {
-    mInputValueMin = mInputValue;
   }
 }
 
@@ -292,20 +357,29 @@ void SetActualTemperatureToDiagrammArray() {
 void PrintAllResults() {
   
   Serial.println("-----------------------");
-  Serial.print("\tHumidity: "); 
-  Serial.println(mHumidity, 2);
+  Serial.print("\tHumidity: "); Serial.println(mHumidity, 2);
   
   // Get the average result from two sensors
   float averageTemperature = (mTemperatures[0] + mTemperatures[1]) / 2.0;
-  Serial.print("\tTemperature: "); 
-  Serial.println(averageTemperature, 2);
-  Serial.print("\tPressure: "); 
-  Serial.print(mPressure / 100.0, 2); Serial.println(" hPa");
-  Serial.print("\tStandard Atmosphere: "); 
-  Serial.println(mAtmosphere, 4);
-  Serial.print("\tAltitude: "); 
-  Serial.print(mAltitude, 2); Serial.println(" M");
+  Serial.print("\tTemperature: "); Serial.println(averageTemperature, 2);
+  Serial.print("\tPressure: "); Serial.print(mPressure / 100.0, 2); Serial.println(" hPa");
+  Serial.print("\tStandard Atmosphere: "); Serial.println(mAtmosphere, 4);
+  Serial.print("\tAltitude: "); Serial.print(mAltitude, 2); Serial.println(" M");
 
+  Serial.print("\tUV: "); Serial.print(mInputUvValue, DEC); Serial.println(" raw");
+
+  Serial.print("\tAccX: "); Serial.print(mAccX, DEC); Serial.print(", ");
+  Serial.print("\tAccY: "); Serial.print(mAccY, DEC); Serial.print(", "); 
+  Serial.print("\tAccZ: "); Serial.print(mAccZ, DEC);  Serial.println();
+  
+  Serial.print("\tGyroX: "); Serial.print(mGyroX, DEC); Serial.print(", ");
+  Serial.print("\tGyroY: "); Serial.print(mGyroY, DEC); Serial.print(", ");
+  Serial.print("\tGyroZ: "); Serial.print(mGyroZ, DEC); Serial.println();
+
+  Serial.print("\tMagX: "); Serial.print(mMagX, DEC); Serial.print(", ");
+  Serial.print("\tMagY: "); Serial.print(mMagY, DEC); Serial.print(", ");
+  Serial.print("\tMagZ: "); Serial.print(mMagZ, DEC); Serial.println();
+    
   Serial.println("-----------------------");
   Serial.println();
 }
