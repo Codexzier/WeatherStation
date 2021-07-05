@@ -55,10 +55,8 @@ String mStringMeasurement = "";
 
 // ========================================================================================
 // WLAN
-const char* mSsid = "ButzBox";
-const char* mPassword = "05-nov-1982";
-//const char* mSsid = "wlanName";
-//const char* mPassword = "wlanPassword";
+const char* mSsid = "wlanName";
+const char* mPassword = "wlanPassword";
 
 WiFiServer mServer(80);
 IPAddress mIp(192, 168, 178, 99);             // where xx is the desired IP Address
